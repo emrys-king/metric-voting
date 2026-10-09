@@ -168,6 +168,8 @@ cython_debug/
 *.log
 *.prm
 data/
+logs/
+nohup.out
 
 experiments/scottish_data/
 experiments/older/

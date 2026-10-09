@@ -51,8 +51,14 @@ Each specific experiment contains files:
   2. `sample_collect.py` for sampling and recording results from generated elections.
   3. `plot_distribution.py` for plotting KDE's visualizing the samples in metric space.
 
-These may be run to re-create our experimental results. Once they have been run, additional plotting may 
-be created within `examples/4-experiment-plotting.ipynb`. We note that 
+These may be run to re-create our experimental results. To run, you must call the script from the top level working-directory, using `poetry run python` before. For example, to run Experiment 3, use:
+```
+poetry run python experiments/two_bloc/10k_voters_200_cands/example_ineff.py
+poetry run python experiments/two_bloc/10k_voters_200_cands/sample_collect.py
+poetry run python experiments/two_bloc/10k_voters_200_cands/plot_distribution.py
+```
+
+Once they have been run, additional plotting may be created within `examples/4-experiment-plotting.ipynb`. We note that 
 our standard versions of Chamberlin Courant and Monroe deterministically choose winners in the case
 of ties. We also have specialized ChamberlinCourantTiebreak and MonroeTiebreak election classes 
 which randomly break ties, however, running experiments for these elections requires a 

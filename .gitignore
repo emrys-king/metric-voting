@@ -169,7 +169,9 @@ cython_debug/
 *.prm
 data/
 logs/
+figures/
 nohup.out
+error_profile.npy
 
 experiments/scottish_data/
 experiments/older/

@@ -23,7 +23,7 @@ detailed information and definitions please refer to [1, 2].
 11. Expanding Approvals [4]
 12. Multiple variations on multi-winner Random Dictator
 
-## Getting Started
+## Getting Started (need to fix!)
 This repository is written in python and uses poetry to manage its dependencies.
 If you don't currently have poetry installed on your system instructions for downloading it 
 may be found [here](https://python-poetry.org/docs/). Once poetry has been installed, 

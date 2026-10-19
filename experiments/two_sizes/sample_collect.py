@@ -2,6 +2,7 @@ import numpy as np
 from metric_voting.spatial_generation import *
 from metric_voting.election_sampling import samples, parallel_samples
 from metric_voting.elections import *
+from metric_voting.utils import ensure_dir
 
 
 # Choose number of voters n

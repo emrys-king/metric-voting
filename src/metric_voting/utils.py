@@ -2,6 +2,7 @@ import numpy as np
 import math
 from numpy.typing import NDArray
 from typing import Callable, Tuple, Any, Optional, Union
+from pathlib import Path
 
 
 def euclidean_distance(x, y):
@@ -167,3 +168,11 @@ def geq_with_tol(a, b, tol = 1e-12):
         (bool): True if a >= b, False otherwise.
     """
     return a >= b-tol
+
+def ensure_dir(path) -> Path:
+    """
+    Creates directories for file saving, allowing for automated replication.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path

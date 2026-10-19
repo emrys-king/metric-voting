@@ -27,7 +27,7 @@ for i,std in enumerate(stds):
     voter_params[i]['scale'] = std
     
 # Define the single set of candidate paramters
-candidate_params = [{'low': -4, 'high': 4, 'size': 2}]
+candidate_params = [{'low': -3, 'high': 3, 'size': 2}]
 
 # define a distance function between voters and candidates
 distance = lambda point1, point2: np.linalg.norm(point1 - point2)
@@ -116,5 +116,5 @@ for E, params in elections_dict.items():
     result_dict[name] = e_dict
     
     
-np.savez_compressed(filename, **result_dict)
+np.savez_compressed(ensure_dir(filename), **result_dict)
     

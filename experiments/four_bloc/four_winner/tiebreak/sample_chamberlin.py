@@ -6,7 +6,7 @@ from metric_voting.election_sampling import (samples,
                                              parallel_with_precomputed_samples)
 from metric_voting.elections import *
 from metric_voting.measurements import euclidean_cost_array
-from metric_voting.utils import cost_array_to_ranking
+from metric_voting.utils import cost_array_to_ranking, ensure_dir
 
 # Prevent extra threading:
 os.environ["OMP_NUM_THREADS"] = "1"

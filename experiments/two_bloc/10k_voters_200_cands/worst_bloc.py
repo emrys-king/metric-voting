@@ -35,4 +35,4 @@ for e in elections:
     worst_bloc_dict[e] = np.array(worst_bloc_samples)
     
     
-np.savez_compressed(output_file, **worst_bloc_dict)
+np.savez_compressed(ensure_dir(output_file), **worst_bloc_dict)

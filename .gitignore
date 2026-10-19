@@ -165,13 +165,17 @@ cython_debug/
 # Files
 *.txt
 *.sh
+# !automate_replication.sh
 *.log
 *.prm
 data/
 logs/
 figures/
+slurm_logs/
+slurm_outputs/
 nohup.out
 error_profile.npy
+poetry.lock
 
 experiments/scottish_data/
 experiments/older/

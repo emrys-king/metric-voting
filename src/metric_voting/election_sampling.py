@@ -236,9 +236,9 @@ def samples(
         # Save results for this set of generator input parameters.
         if not filename is None:
             if len(generator_input) > 1:
-                np.savez_compressed(filename[:-4] + str(gidx) + filename[-4:], **result_dict)
+                np.savez_compressed(ensure_dir(filename[:-4] + str(gidx) + filename[-4:]), **result_dict)
             else:
-                np.savez_compressed(filename, **result_dict)
+                np.savez_compressed(ensure_dir(filename), **result_dict)
 
         results_list.append(result_dict)
 
@@ -365,9 +365,9 @@ def parallel_samples(
 
         if not filename is None:
             if len(generator_input) > 1:
-                np.savez_compressed(filename[:-4] + str(gidx) + filename[-4:], **result_dict)
+                np.savez_compressed(ensure_dir(filename[:-4] + str(gidx) + filename[-4:]), **result_dict)
             else:
-                np.savez_compressed(filename, **result_dict)
+                np.savez_compressed(ensure_dir(filename), **result_dict)
 
         results_list.append(result_dict)
 
@@ -429,7 +429,7 @@ def parallel_with_precomputed_samples(
             result_dict[name][i] = winner_mask
             
     if not filename is None:
-        np.savez_compressed(filename, **result_dict)
+        np.savez_compressed(ensure_dir(filename), **result_dict)
 
     return result_dict
     

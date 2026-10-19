@@ -10,6 +10,7 @@ from typing import Callable, Dict, Tuple, Any, List, Optional, Union
 
 from metric_voting.elections import *
 from metric_voting.measurements import *
+from metric_voting.utils import ensure_dir
 
 
 ####################################################################################################
@@ -208,7 +209,7 @@ def plot_winner_distribution(
     fig.legend(handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, 0.075), ncol=3)
     plt.subplots_adjust(wspace=0.1, hspace=0.1)
     if output_file is not None:
-        plt.savefig(output_file, bbox_inches='tight')
+        plt.savefig(ensure_dir(output_file), bbox_inches='tight')
         
     plt.show()
 
@@ -345,7 +346,7 @@ def plot_ineff_example(
     fig.legend(handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, 0.014), ncol=3)
     plt.subplots_adjust(wspace=0.1, hspace=0.1)
     if output_file is not None:
-        plt.savefig(output_file, bbox_inches='tight')
+        plt.savefig(ensure_dir(output_file), bbox_inches='tight')
         
     plt.show()
     

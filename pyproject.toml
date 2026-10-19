@@ -6,11 +6,11 @@ authors = [
     { name = "Kevin Quinn", email = "quinnk@bu.edu" },
     { name = "Emrys King", email = "emrys@uchicago.edu" },
 ]
-requires-python = ">=3.9,<4,<3.13"
+requires-python = ">=3.11,<3.13"
 readme = "README.md"
 dependencies = [
     "numpy>=1.26.0",
-    "pandas>=1.5.3",
+    "pandas>=2.1",
     "matplotlib>=3.9.3,<4",
     "seaborn>=0.13.2,<0.14",
     "pulp>=2.9.0,<3",
@@ -24,3 +24,6 @@ dev = ["pytest>=8.3.3,<9"]
 [tool.uv]
 default-groups = "all"
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

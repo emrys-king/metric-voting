@@ -120,6 +120,5 @@ for E, params in elections_dict.items():
     
     result_dict[name] = e_dict
     
-    
-np.savez_compressed(filename, **result_dict)
+np.savez_compressed(ensure_dir(filename), **result_dict)
     

@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 
 from .elections import *
 from .measurements import euclidean_cost_array, q_cost_array
-from .utils import cost_array_to_ranking
+from .utils import cost_array_to_ranking, ensure_dir
 
 
 def generate_election_input(

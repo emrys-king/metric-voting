@@ -43,7 +43,7 @@ plot_winner_distribution(
     xlim = [-4,4],
     ylim = [-4,4],
     sample_fraction = 0.25,
-    plot_kde=False,
+    # plot_kde=False,
     # kde_sample_fraction=0.02,
     random_seed = 42,
     output_file = output_file

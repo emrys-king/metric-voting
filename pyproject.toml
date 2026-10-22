@@ -16,6 +16,7 @@ dependencies = [
     "pulp>=2.9.0,<3",
     "votekit>=3.0.0,<4",
     "gurobipy>=12.0.1,<13",
+    "joypy==0.2.6",
 ]
 
 [dependency-groups]

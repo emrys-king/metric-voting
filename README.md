@@ -39,7 +39,14 @@ uv run ./experiments/four_bloc/five_winner/sample_collect.py
 ```
 will generate the data for Experiment 6, four blocs of equal size in an election with five winners.
 
-For full replication, you must also acquire a [Gurobi](https://www.gurobi.com/) license which is [free for academics](https://www.gurobi.com/academics) (faculty, staff, and students). This is required to run the integer program in the Chamberlin-Courant and Monroe simulations. Without the license, the sampling scripts will still run, but the results will not be correct. A file named `error_profile.npy` will also populate at the top level of the repository.
+Chamberlin-Courant and Monroe use PuLP with HiGHS by default. Their tiebreak versions
+use repeated SCIP solves to enumerate all distinct optimal winning committees and select
+one uniformly. Each committee receives equal probability regardless of its number of
+optimal voter assignments, changing the weighting of the original Gurobi implementation.
+Enumeration has no committee-count cap and can be expensive when many committees tie.
+A solver limit raises an error instead of sampling an incomplete set; the time limit
+covers optimization and enumeration together. No commercial solver license is needed.
+SCIP tuning files use its `.set` format, rather than Gurobi's `.prm` format.
 
 ## Examples
 Examples for generating metric space settings, performing elections, computing measurements, 
@@ -56,7 +63,7 @@ Each specific experiment contains files:
 
 These may be run to re-create our experimental results. To run a specific script, use `uv run path/to/script.py` as detailed in [Getting Started](#getting-started).
 
-Once scripts have been run to generate necessary data, additional plotting may be created within `examples/4-experiment-plotting.ipynb`. We note that our standard versions of Chamberlin Courant and Monroe deterministically choose winners in the case of ties. We also have specialized ChamberlinCourantTiebreak and MonroeTiebreak election classes which randomly break ties, however, running experiments for these elections requires a license with Gurobi. These are therefore presented as separate experiments within nested `tiebreak/` folders for each experiment respectively.
+Once scripts have been run to generate necessary data, additional plotting may be created within `examples/4-experiment-plotting.ipynb`. We note that our standard versions of Chamberlin Courant and Monroe deterministically choose winners in the case of ties. The specialized ChamberlinCourantTiebreak and MonroeTiebreak election classes randomly break ties using SCIP. These are therefore presented as separate experiments within nested `tiebreak/` folders for each experiment respectively.
 
 ## References
 [1] Faliszewski, Piotr, et al. "Multiwinner voting: A new challenge for social choice theory." Trends in computational social choice 74.2017 (2017): 27-47.

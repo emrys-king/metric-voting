@@ -46,15 +46,14 @@ generator = GroupSpatial(
 # Define elections
 # NOTE: Here the Chamberlin and Monroe elections do not use random tiebreaking -- that is
 # implemented and run in a separate tiebreak experiment (in the tiebreak folder)
-# which would need a gurobi license to run.
 elections_dict = {
     SNTV:{},
     Bloc:{},
     Borda:{},
     STV:{'transfer_type' : 'weighted-fractional'},
-    ChamberlinCourant:{'solver' : 'GUROBI', 'log_path' : 'experiments/four_bloc/four_winner/cc.log'},
+    ChamberlinCourant:{'solver' : 'HiGHS', 'log_path' : 'experiments/four_bloc/four_winner/cc.log'},
     GreedyCC:{},
-    Monroe:{'solver' : 'GUROBI', 'log_path' : 'experiments/four_bloc/four_winner/monroe.log'},
+    Monroe:{'solver' : 'HiGHS', 'log_path' : 'experiments/four_bloc/four_winner/monroe.log'},
     GreedyMonroe:{}, 
     PluralityVeto:{},
     CommitteeVeto:{'q':k}, 

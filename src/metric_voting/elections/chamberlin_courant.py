@@ -1,11 +1,11 @@
-import gurobipy as gp
 import numpy as np
 import pulp
-from gurobipy import GRB
 from numpy.typing import NDArray
+from pyscipopt import Expr, Model, Variable, quicksum
 
 from ..utils import borda_matrix, tiebreak
 from .base import Election
+from .scip_tiebreak import enumerate_optimal_committees
 
 
 class ChamberlinCourant(Election):
@@ -56,18 +56,26 @@ class ChamberlinCourant(Election):
             from PuLP's available solvers, for more information please see
             (https://coin-or.github.io/pulp/guides/how_to_configure_solvers.html).
 
-            Some options 'PULP_CBC_CMD' and 'GUROBI_CMD' (requires licesnse).
-            Defaults to 'PULP_CBC_CMD', which uses PuLPs default coin and branch bound solver.
+            Defaults to 'HiGHS', using the highspy Python interface.
 
-        log_path (str, optional): Path to log file for solver output. Defaults to 'cc.log'.
+        log_path (str, optional): Path to log file for solver output. Defaults to None.
 
     Attributes:
         objective (float): Objective value of the last solved problem.
     """
 
-    def __init__(self, solver: str = "PULP_CBC_CMD", log_path: str | None = None):
+    def __init__(self, solver: str = "HiGHS", log_path: str | None = None):
         self.log_path = log_path
-        self.solver = pulp.getSolver(solver, msg=False, logPath=log_path)
+        if solver == "HiGHS":
+            self.solver = pulp.HiGHS(
+                msg=log_path is not None,
+                gapRel=0,
+                gapAbs=0,
+                log_file=log_path or "",
+                log_to_console=False,
+            )
+        else:
+            self.solver = pulp.getSolver(solver, msg=False, logPath=log_path)
         self.objective = None
 
     def elect(self, profile: NDArray, k: int) -> NDArray:
@@ -119,8 +127,11 @@ class ChamberlinCourant(Election):
         problem += pulp.lpSum(y[j] for j in range(m)) == k
 
         problem.solve(self.solver)
-        self.objective = pulp.value(problem.objective)
-        elected = np.array([j for j in range(m) if pulp.value(y[j]) == 1])
+        if problem.sol_status != pulp.LpSolutionOptimal:
+            raise pulp.PulpSolverError("The solver did not prove an optimal election result")
+
+        self.objective = pulp.value(problem.objective) or 0.0
+        elected = np.array([j for j in range(m) if pulp.value(y[j]) > 0.5])
         # Translate back to original indices:
         # elected = candidate_permutation[elected]
         return elected
@@ -140,8 +151,10 @@ class ChamberlinCourantTiebreak(Election):
 
     A large portion of this code is written by and attributed to: Peter Rock, peter@mggg.org
 
-    NOTE: Since this model uses Gurobi as an LP solver,
-    you will need a license to run larger elections.
+    Uses repeated SCIP solves to enumerate all distinct optimal winning committees
+    and chooses one uniformly, regardless of how many optimal voter assignments
+    each committee admits. Raises RuntimeError if a solver limit interrupts
+    optimization or enumeration; an incomplete set is never sampled.
 
     This is based on work from the following papers:
     "Achieving Fully Proportional Representation: Approximability Results"
@@ -175,8 +188,8 @@ class ChamberlinCourantTiebreak(Election):
 
 
     Args:
-        tuning_file_path (str, optional) : Filepath for .prm file giving tuning parameters
-            for Gurobi.
+        tuning_file_path (str, optional): Path to a SCIP settings (.set) file.
+        n_threads (int, optional): Solver thread limit. Defaults to 1.
 
     Attributes:
         objective (float): Objective value of the last solved problem.
@@ -188,8 +201,7 @@ class ChamberlinCourantTiebreak(Election):
         self.objective = None
 
     def elect(self, profile: NDArray, k: int) -> NDArray:
-        """
-        Elect k candidates with the Chamberlain Courant Mechanism.
+        """Choose uniformly among optimal Chamberlin-Courant committees.
 
         Args:
             profile (np.ndarray): (candidates x voters) Preference Profile.
@@ -199,72 +211,65 @@ class ChamberlinCourantTiebreak(Election):
             elected (np.ndarray): Winning candidates
         """
         self._approve_profile(profile, k)
-        m, n = profile.shape
-        borda_scores = borda_matrix(profile, k).T  # n x m matrix after transpose
+        borda_scores = borda_matrix(profile, k).T
 
-        env = gp.Env(params={"OutputFlag": 0})  # Silent mode
-        model = gp.Model("ChamberlinCourant", env=env)
-        model.setParam("Threads", self.n_threads)
+        model = Model("ChamberlinCourant")
+        try:
+            model.hideOutput()
+            model.setParam("parallel/maxnthreads", self.n_threads)
+            model.setParam("lp/threads", self.n_threads)
 
-        if self.tuning_file_path is not None:
-            model.read(self.tuning_file_path)
+            if self.tuning_file_path is not None:
+                model.readParams(self.tuning_file_path)
 
-        # Define binary variables
-        x = model.addVars(n, m, vtype=GRB.BINARY, name="x")
-        y = model.addVars(m, vtype=GRB.BINARY, name="y")
+            objective, candidate_variables = _build_chamberlin_courant_model(model, borda_scores, k)
 
-        # Objective function: maximize sum of assigned Borda scores
-        model.setObjective(
-            gp.quicksum(
-                borda_scores[i, j] * x[i, j] for i in range(n) for j in range(m)
-            ),
-            GRB.MAXIMIZE,
-        )
-
-        # Constraint 1: Each voter is assigned to exactly 1 candidate
-        for i in range(n):
-            model.addConstr(
-                gp.quicksum(x[i, j] for j in range(m)) == 1, f"AssignVoter_{i}"
+            committees, self.objective = enumerate_optimal_committees(
+                model, objective, candidate_variables
             )
+            committee_index = np.random.randint(len(committees))
 
-        # Constraint 2: A voter can only be assigned to an elected candidate
-        for i in range(n):
-            for j in range(m):
-                model.addConstr(x[i, j] <= y[j], f"OnlyElected_{i}_{j}")
+            return committees[committee_index]
+        finally:
+            model.freeProb()
 
-        # Constraint 3: Exactly k candidates are elected
-        model.addConstr(gp.quicksum(y[j] for j in range(m)) == k, "ElectExactlyK")
 
-        # Allow for multiple solutions
-        model.setParam(GRB.Param.PoolSearchMode, 2)
-        # Store mutliple solutions (up at most 100,000)
-        n_store = 100000
-        model.setParam(GRB.Param.PoolSolutions, n_store)
-        # Only store the global optima
-        model.setParam(GRB.Param.PoolGap, 0.0)
+def _build_chamberlin_courant_model(
+    model: Model, borda_scores: NDArray, k: int
+) -> tuple[Expr, list[Variable]]:
+    """Add the Chamberlin-Courant assignment model to an empty, caller-owned SCIP model.
 
-        model.optimize()
+    Args:
+        model (Model): Model to populate; the caller retains responsibility for freeing it.
+        borda_scores (NDArray): Integer scores indexed by voter, then candidate.
+        k (int): Number of candidates to elect.
 
-        assert model.status == GRB.OPTIMAL, "OPTIMAL solution not found."
+    Returns:
+        tuple[Expr, list[Variable]]: Borda objective and binary election variables in
+            candidate-index order.
+    """
+    n, m = borda_scores.shape
 
-        n_solutions = model.SolCount
-        best_solutions = []
-        best_values = []
-        for sol_idx in range(n_solutions):
-            model.setParam(GRB.Param.SolutionNumber, sol_idx)
-            model.update()
-            obj_value = model.PoolObjVal
-            elected_candidates = np.array([j for j in range(m) if y[j].Xn > 0.5])
-            best_solutions.append(elected_candidates)
-            best_values.append(obj_value)
+    x = {
+        (i, j): model.addVar(vtype="B", name=f"x_{i}_{j}")
+        for i in range(n)
+        for j in range(m)
+    }
+    y = [model.addVar(vtype="B", name=f"y_{j}") for j in range(m)]
 
-        # This handles numerical errors -- solutions should be integer values anyways
-        best_values = np.round(best_values, decimals=5)
+    objective = quicksum(
+        borda_scores[i, j] * x[i, j] for i in range(n) for j in range(m)
+    )
+    model.setObjective(objective, "maximize")
 
-        # Choose randomly among the best solutions available.
-        rand_solution_idx = tiebreak(best_values)[0]
-        self.objective = best_values[rand_solution_idx]
-        return best_solutions[rand_solution_idx]
+    for i in range(n):
+        model.addCons(quicksum(x[i, j] for j in range(m)) == 1)
+        for j in range(m):
+            model.addCons(x[i, j] <= y[j])
+
+    model.addCons(quicksum(y) == k)
+
+    return objective, y
 
 
 ####################################################################################################

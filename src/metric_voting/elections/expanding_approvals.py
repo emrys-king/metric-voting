@@ -35,7 +35,6 @@ class ExpandingApprovals(Election):
         assert self.uncovered_mask is not None, "Uncovered mask has not been set."
         assert self.elected_mask is not None, "Elected mask has not been set."
         assert self.neighborhood is not None, "Neighborhood has not been set."
-        assert self.random_order is not None, "Random order has not been set."
 
         if np.sum(self.neighborhood[c, :]) >= self.quota:
             self.elected_mask[c] = True

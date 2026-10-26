@@ -196,7 +196,8 @@ def proportional_assignment(
     cst_array: NDArray,  
     voter_labels: NDArray, 
     bloc_label: int,
-    k : int
+    k: int,
+    floor=True,
 ) -> NDArray:  
     """
     Given voters and candidates in an input cost array, finds the lowest cost 
@@ -209,6 +210,10 @@ def proportional_assignment(
                                         the bloc label of voter i.
         bloc_label (int): Selected bloc label to compute score for.
         k (int): Number of winners.
+        floor (bool): whether or not to round the number of deserved seats to the nearest integer.
+                    if True (default), the number of deserved seats will be rounded down (i.e 2.8 becomes 2);
+                    if False, the number of deserved seats will be rounded to the nearest integer
+                    (i.e. 2.8 becomes 3).
     
     Returns:
         NDArray : Length size array of candidate indices
@@ -216,7 +221,10 @@ def proportional_assignment(
     _, n = cst_array.shape
     bloc_size = np.sum(voter_labels == bloc_label)
     bloc_array = cst_array[:, voter_labels == bloc_label]
-    size = int(bloc_size / n * k)
+    if floor:
+        size = int(bloc_size / n * k)
+    else:
+        size = round(bloc_size / n * k)
     return min_assignment(bloc_array, size)
 
 
@@ -224,7 +232,8 @@ def proportional_assignment_cost(
     cst_array: NDArray,  
     voter_labels: NDArray, 
     bloc_label: int,
-    k : int
+    k : int,
+    floor=True,
 ) -> float:  
     """
     Given voters and candidates in an input cost array, finds the lowest cost 
@@ -237,6 +246,11 @@ def proportional_assignment_cost(
                                         the bloc label of voter i.
         bloc_label (int): Selected bloc label to compute score for.
         k (int): Number of winners.
+        floor (bool): whether or not to round the number of deserved seats to the nearest integer.
+                    if True (default), the number of deserved seats will be rounded down (i.e 2.8 becomes 2);
+                    if False, the number of deserved seats will be rounded to the nearest integer
+                    (i.e. 2.8 becomes 3).
+            
     
     Returns:
         float: Sum of distances (cost).
@@ -244,16 +258,19 @@ def proportional_assignment_cost(
     _, n = cst_array.shape
     bloc_size = np.sum(voter_labels == bloc_label)
     bloc_array = cst_array[:, voter_labels == bloc_label]
-    size = int(bloc_size / n * k)
+    if floor:
+        size = int(bloc_size / n * k)
+    else:
+        size = round(bloc_size / n * k)
     return min_assignment_cost(bloc_array, size)
-
 
 
 def group_inefficiency(
     cst_array: NDArray, 
     winner_indices: NDArray, 
     voter_labels: NDArray, 
-    bloc_label: int
+    bloc_label: int,
+    floor=True
 ) -> float:
     """
     Computes the group inefficiency score as the cost ratio between
@@ -269,6 +286,11 @@ def group_inefficiency(
         voter_labels (np.ndarray[int]): Integer array where index i gives
                                         the bloc label of voter i.
         bloc_label (int): Selected bloc label to compute score for.
+        floor (bool): whether or not to round the number of deserved seats to the nearest integer.
+                    if True (default), the number of deserved seats will be rounded down (i.e 2.8 becomes 2);
+                    if False, the number of deserved seats will be rounded to the nearest integer
+                    (i.e. 2.8 becomes 3).
+            
         
     Returns:
         float: Group inefficiency score.
@@ -278,13 +300,15 @@ def group_inefficiency(
         cst_array[winner_indices, :],
         voter_labels,
         bloc_label,
-        k
+        k,
+        floor=floor
     )
     cost2 = proportional_assignment_cost(
         cst_array,
         voter_labels,
         bloc_label,
-        k
+        k,
+        floor=floor
     )
     
     if cost1 == 0 and cost2 == 0:
